@@ -15,6 +15,7 @@ namespace JapaneseTrafficLights
 			var config = Configuration<JapaneseTrafficLightsConfiguration>.Load();
 
 			UIHelperBase GroupHeader = helper.AddGroup("Japanese Traffic Lights Options - Changes will apply after reload savedata.");
+			//group.AddCheckbox("More realistic layout (may affect performance)", config.realisticLayout, IsRealStyle);
 			GroupHeader.AddCheckbox("Use Global style on Monorail Roads", config.Monorail, IsMonorail);
 
 			UIHelperBase GroupTinyRoads = helper.AddGroup("Tiny Roads");					
@@ -46,6 +47,14 @@ namespace JapaneseTrafficLights
 			UIHelperBase GroupGlobal = helper.AddGroup("Global(It applies to new roads)");
 			GroupGlobal.AddDropdown("Style", new string[] { "White", "Brown" }, config.Global, Global);
 		}
+
+		/*private void IsRealStyle(bool c)
+		{
+			var config = Configuration<JapaneseTrafficLightsConfiguration>.Load();
+
+			config.realisticLayout = c;
+			Configuration<JapaneseTrafficLightsConfiguration>.Save();
+		}*/
 
 		private void IsPedRoadsSignal(bool b)
 		{
@@ -147,6 +156,7 @@ namespace JapaneseTrafficLights
 	[ConfigurationPath("JapaneseTrafficLights.xml")]
 	public class JapaneseTrafficLightsConfiguration
 	{
+		//public bool realisticLayout { get; set; }
 		public bool HidePedRoadsSignal { get; set; } = true;
 		public bool HidePromenadeSignal { get; set; } = false;
 		public bool Monorail { get; set; } = true;

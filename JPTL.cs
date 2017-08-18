@@ -28,7 +28,7 @@ namespace JapaneseTrafficLights
 		{
 			//左側通行(LHT) 809633246.
 			//右側通行(RHT) 810355214.
-			string workshopId = "809633246.";
+			string workshopId = "";
 			//																L or R 確認
 			JPTLmain = PrefabCollection<PropInfo>.FindLoaded(workshopId + "JPTLmainNormalL_Data"); // 白　メイン
 			JPTLsub = PrefabCollection<PropInfo>.FindLoaded(workshopId + "JPTLsubNormalL_Data"); // 白　反対側
@@ -87,95 +87,10 @@ namespace JapaneseTrafficLights
 							continue;
 						}
 
-						// 道路の種別を判別する
-						style style = style.def;
-						string name = road.name;
-
-						// Tiny Roads
-						if (
-							name.Contains("Gravel Road") ||
-							name.Contains("PlainStreet2L") ||
-							name.Contains("Two-Lane Alley") ||
-							name.Contains("Two-Lane Oneway") ||
-							name.Contains("One-Lane Oneway With") ||
-							name == "One-Lane Oneway"
-						) { style = CheckRoadStyle(config.TinyRoads); }
-
-						// Small Roads
-						if (
-							name.Contains("Basic Road") ||
-							name.Contains("BasicRoadPntMdn") ||
-							name.Contains("BasicRoadMdn") ||
-							name.Contains("Oneway Road") ||
-							name.Contains("Asymmetrical Three Lane Road") ||
-							name.Contains("One-Lane Oneway with") ||
-							name.Contains("Small Busway") ||
-							name.Contains("Harbor Road") ||
-							name.Contains("Tram Depot Road") ||
-							// Small Road Monorail
-							name.Contains("Small Road")
-						) { style = CheckRoadStyle(config.SmallRoads); }
-
-						// Small Heavy Roads
-						if (
-							name.Contains("BasicRoadTL") ||
-							name.Contains("AsymRoadL1R2") ||
-							name.Contains("Oneway3L") ||
-							name.Contains("Small Avenue") ||
-							name.Contains("AsymRoadL1R3")
-						) { style = CheckRoadStyle(config.SmallHeavyRoads); }
-
-						// Medium Roads
-						if (
-							name.Contains("Medium Road") ||
-							name.Contains("Avenue Large With") ||
-							name.Contains("Medium Avenue") ||
-							//FourDevidedLaneAvenue4Parking
-							//FourDevidedLaneAvenue2Bus
-							name.Contains("FourDevidedLaneAvenue") || 
-							name.Contains("AsymAvenueL2R4") ||
-							name.Contains("AsymAvenueL2R3")
-						) { style = CheckRoadStyle(config.MediumRoads); }
-
-						// Large Roads
-						if (
-							name.Contains("Large Road") ||
-							name.Contains("Large Oneway") ||
-							name.Contains("Eight-Lane Avenue")
-						) { style = CheckRoadStyle(config.LargeRoads); }
-
-						// Wide Roads
-						if(
-							//WideAvenue6LBusCenterBike
-							name.Contains("WideAvenue")
-						) { style = CheckRoadStyle(config.WideRoads); }
-
-						// Highway
-						if (
-							name.Contains("Highway")
-						) { style = CheckRoadStyle(config.Highways); }
-
-						// Pedestrian Roads
-						if ( name.Contains("Zonable Pedestrian") )
-						{
-							if (config.HidePedRoadsSignal) { style = style.none; }
-							else { style = CheckRoadStyle(config.PedestrianRoads); }							
-						}
-
-						// Promenade
-						if ( name.Contains("Zonable Promenade") ){
-							if (config.HidePromenadeSignal) { style = style.none; }
-							else { style = CheckRoadStyle(config.PedestrianRoads); }
-						}
-
-						// Monorail
-						if ( name.Contains("Monorail") ) { if (config.Monorail) { style = CheckRoadStyle(config.Global); } }
-
-						// Global
-						if (style == style.def) { style = CheckRoadStyle(config.Global); }
+						// 道路の種別を判別してstyleを指定する
+						style style = ReturnStyleFromRoadname(road.name);						
 
 						// ここから置き換え
-
 						switch (prop.name)
 						{
 							//（右側通行）これと
@@ -207,6 +122,13 @@ namespace JapaneseTrafficLights
 							case "Traffic Light European 01 Mirror":
 							case "Traffic Light 02":
 							case "Traffic Light European 02":
+								if (
+										//road.name.Contains("FourDevidedLaneAvenue")
+										road.name.Contains("WideAvenue")
+								){
+									style = style.none;
+								}
+
 								switch (style)
 								{
 									case style.none:
@@ -233,31 +155,28 @@ namespace JapaneseTrafficLights
 
 								// NE2の中央道路の場合は、歩行者信号を非表示にする
 								if (
-									road.name.Contains("FourDevidedLaneAvenue") ||
-									road.name.Contains("WideAvenue")
+									road.name.Contains("FourDevidedLaneAvenue")
+									//road.name.Contains("WideAvenue")
 								){
-									laneProp.m_finalProp = null;
-									laneProp.m_prop = null;
+									style = style.none;
 								}
-								else
+
+								switch (style)
 								{
-									switch (style)
-									{
-										case style.none:
-											laneProp.m_finalProp = null;
-											laneProp.m_prop = null;
-											break;
+									case style.none:
+										laneProp.m_finalProp = null;
+										laneProp.m_prop = null;
+										break;
 
-										case style.white:
-											laneProp.m_finalProp = JPTLsub;
-											laneProp.m_prop = JPTLsub;
-											break;
+									case style.white:
+										laneProp.m_finalProp = JPTLsub;
+										laneProp.m_prop = JPTLsub;
+										break;
 
-										case style.brown:
-											laneProp.m_finalProp = JPTLsubB;
-											laneProp.m_prop = JPTLsubB;
-											break;
-									}
+									case style.brown:
+										laneProp.m_finalProp = JPTLsubB;
+										laneProp.m_prop = JPTLsubB;
+										break;
 								}
 								break;
 						}
@@ -301,9 +220,9 @@ namespace JapaneseTrafficLights
 		}
 
 		/// <summary>
-		/// 信号スタイルの値を確認し、styleで返す。
+		/// コンフィグの値に対応したstyleを返す。
 		/// </summary>
-		private static style CheckRoadStyle(int i)
+		private static style ReturnStyleFromConfig(int i)
 		{
 			switch (i)
 			{
@@ -313,6 +232,103 @@ namespace JapaneseTrafficLights
 				case 1:
 					return style.brown;
 			}
+		}
+
+		/// <summary>
+		/// 道路名に対応したsyleを返す。
+		/// </summary>
+		private static style ReturnStyleFromRoadname(string name)
+		{
+			// 手違いでdefが残った場合にはデフォルトの信号が現れる
+			style style = style.def;
+
+			// Tiny Roads
+			if (
+				name.Contains("Gravel Road") ||
+				name.Contains("PlainStreet2L") ||
+				name.Contains("Two-Lane Alley") ||
+				name.Contains("Two-Lane Oneway") ||
+				name.Contains("One-Lane Oneway With") ||
+				name == "One-Lane Oneway"
+			) { style = ReturnStyleFromConfig(config.TinyRoads); }
+
+			// Small Roads
+			if (
+				name.Contains("Basic Road") ||
+				name.Contains("BasicRoadPntMdn") ||
+				name.Contains("BasicRoadMdn") ||
+				name.Contains("Oneway Road") ||
+				name.Contains("Asymmetrical Three Lane Road") ||
+				name.Contains("One-Lane Oneway with") ||
+				name.Contains("Small Busway") ||
+				name.Contains("Harbor Road") ||
+				name.Contains("Tram Depot Road") ||
+				// Small Road Monorail
+				name.Contains("Small Road")
+			) { style = ReturnStyleFromConfig(config.SmallRoads); }
+
+			// Small Heavy Roads
+			if (
+				name.Contains("BasicRoadTL") ||
+				name.Contains("AsymRoadL1R2") ||
+				name.Contains("Oneway3L") ||
+				name.Contains("Small Avenue") ||
+				name.Contains("AsymRoadL1R3") ||
+				name.Contains("Oneway4L") ||
+				name.Contains("OneWay3L")
+			) { style = ReturnStyleFromConfig(config.SmallHeavyRoads); }
+
+			// Medium Roads
+			if (
+				name.Contains("Medium Road") ||
+				name.Contains("Avenue Large With") ||
+				name.Contains("Medium Avenue") ||
+				//FourDevidedLaneAvenue4Parking
+				//FourDevidedLaneAvenue2Bus
+				name.Contains("FourDevidedLaneAvenue") ||
+				name.Contains("AsymAvenueL2R4") ||
+				name.Contains("AsymAvenueL2R3")
+			) { style = ReturnStyleFromConfig(config.MediumRoads); }
+
+			// Large Roads
+			if (
+				name.Contains("Large Road") ||
+				name.Contains("Large Oneway") ||
+				name.Contains("Eight-Lane Avenue")
+			) { style = ReturnStyleFromConfig(config.LargeRoads); }
+
+			// Wide Roads
+			if (
+				//WideAvenue6LBusCenterBike
+				name.Contains("WideAvenue")
+			) { style = ReturnStyleFromConfig(config.WideRoads); }
+
+			// Highway
+			if (
+				name.Contains("Highway")
+			) { style = ReturnStyleFromConfig(config.Highways); }
+
+			// Pedestrian Roads
+			if (name.Contains("Zonable Pedestrian"))
+			{
+				if (config.HidePedRoadsSignal) { style = style.none; }
+				else { style = ReturnStyleFromConfig(config.PedestrianRoads); }
+			}
+
+			// Promenade
+			if (name.Contains("Zonable Promenade"))
+			{
+				if (config.HidePromenadeSignal) { style = style.none; }
+				else { style = ReturnStyleFromConfig(config.PedestrianRoads); }
+			}
+
+			// Monorail
+			if (name.Contains("Monorail")) { if (config.Monorail) { style = ReturnStyleFromConfig(config.Global); } }
+
+			// Global
+			if (style == style.def) { style = ReturnStyleFromConfig(config.Global); }
+
+			return style;
 		}
 	}
 }
