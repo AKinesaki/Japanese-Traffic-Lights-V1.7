@@ -14,47 +14,72 @@ namespace JapaneseTrafficLights
 		{
 			var config = Configuration<JapaneseTrafficLightsConfiguration>.Load();
 
-			UIHelperBase GroupHeader = helper.AddGroup("Japanese Traffic Lights Options - Changes will apply after reload savedata.");
-			//group.AddCheckbox("More realistic layout (may affect performance)", config.realisticLayout, IsRealStyle);
-			GroupHeader.AddCheckbox("Use Global style on Monorail Roads", config.Monorail, IsMonorail);
+			// 多言語対応
+			Globalization globalText = new Globalization();
+			SavedString currentLang = new SavedString("localeID", "gameSettings");
 
-			UIHelperBase GroupTinyRoads = helper.AddGroup("Tiny Roads");					
-			GroupTinyRoads.AddDropdown("Style", new string[] { "White", "Brown" }, config.TinyRoads, TinyRoads);
+			string displayLang;
+			if(currentLang.value.Contains("ja")){ displayLang = "ja"; }
+			else{ displayLang = currentLang.value; }
 
-			UIHelperBase GroupPedestrianRoads = helper.AddGroup("Pedestrian Roads");
-			GroupPedestrianRoads.AddDropdown("Style", new string[] { "White", "Brown" }, config.PedestrianRoads, PedestrianRoads);
-			GroupPedestrianRoads.AddCheckbox("Hide signals on Pedestrian Roads", config.HidePedRoadsSignal, IsPedRoadsSignal);
-			GroupPedestrianRoads.AddCheckbox("Hide signals on Promenade", config.HidePromenadeSignal, IsPromenadeSignal);
+			string style = globalText.GetString(displayLang, Globalization.StringKeys.OptionStyleText);
+			string enable = globalText.GetString(displayLang, Globalization.StringKeys.OptionEnableText);
 
-			UIHelperBase GroupSmallRoads = helper.AddGroup("Small Roads");
-			GroupSmallRoads.AddDropdown("Style", new string[] { "White", "Brown" }, config.SmallRoads, SmallRoads);
+			string[] styles = new string[] {
+				globalText.GetString(displayLang, Globalization.StringKeys.StyleWhite),
+				globalText.GetString(displayLang, Globalization.StringKeys.StyleBrown),
+				globalText.GetString(displayLang, Globalization.StringKeys.StyleBrown2)
+			};
 
-			UIHelperBase GroupSmallHeavyRoads = helper.AddGroup("Small Heavy Roads");
-			GroupSmallHeavyRoads.AddDropdown("Style", new string[] { "White", "Brown" }, config.SmallHeavyRoads, SmallHeavyRoads);
+			// オプションページ
+			UIHelperBase GroupHeader = helper.AddGroup(globalText.GetString(displayLang, Globalization.StringKeys.HeaderText));
 
-			UIHelperBase GroupMediumRoads = helper.AddGroup("Medium Roads");
-			GroupMediumRoads.AddDropdown("Style", new string[] { "White", "Brown" }, config.MediumRoads, MediumRoads);
+			UIHelperBase GroupGlobal = helper.AddGroup(globalText.GetString(displayLang, Globalization.StringKeys.GlobalText));
+			GroupGlobal.AddDropdown(style, styles, config.Global, Global);
 
-			UIHelperBase GroupLargeRoads = helper.AddGroup("Large Roads");
-			GroupLargeRoads.AddDropdown("Style", new string[] { "White", "Brown" }, config.LargeRoads, LargeRoads);
+			UIHelperBase GroupTinyRoads = helper.AddGroup(globalText.GetString(displayLang, Globalization.StringKeys.TinyRoadsText));					
+			GroupTinyRoads.AddDropdown(style, styles, config.TinyRoads, TinyRoads);
 
-			UIHelperBase GroupWideRoads = helper.AddGroup("Wide Roads");
-			GroupWideRoads.AddDropdown("Style", new string[] { "White", "Brown" }, config.WideRoads, WideRoads);
+			UIHelperBase GroupSmallRoads = helper.AddGroup(globalText.GetString(displayLang, Globalization.StringKeys.SmallRoadsText));
+			GroupSmallRoads.AddDropdown(style, styles, config.SmallRoads, SmallRoads);
 
-			UIHelperBase GroupHighways = helper.AddGroup("Highways");
-			GroupHighways.AddDropdown("Style", new string[] { "White", "Brown" }, config.Highways, Highways);
+			UIHelperBase GroupSmallHeavyRoads = helper.AddGroup(globalText.GetString(displayLang, Globalization.StringKeys.SmallHeavyRoadsText));
+			GroupSmallHeavyRoads.AddDropdown(style, styles, config.SmallHeavyRoads, SmallHeavyRoads);
 
-			UIHelperBase GroupGlobal = helper.AddGroup("Global(It applies to new roads)");
-			GroupGlobal.AddDropdown("Style", new string[] { "White", "Brown" }, config.Global, Global);
+			UIHelperBase GroupMediumRoads = helper.AddGroup(globalText.GetString(displayLang, Globalization.StringKeys.MediumRoadsText));
+			GroupMediumRoads.AddDropdown(style, styles, config.MediumRoads, MediumRoads);
+
+			UIHelperBase GroupLargeRoads = helper.AddGroup(globalText.GetString(displayLang, Globalization.StringKeys.LargeRoadsText));
+			GroupLargeRoads.AddDropdown(style, styles, config.LargeRoads, LargeRoads);
+
+			UIHelperBase GroupWideRoads = helper.AddGroup(globalText.GetString(displayLang, Globalization.StringKeys.WideRoadsText));
+			GroupWideRoads.AddDropdown(style, styles, config.WideRoads, WideRoads);
+
+			UIHelperBase GroupHighways = helper.AddGroup(globalText.GetString(displayLang, Globalization.StringKeys.HighwaysText));
+			GroupHighways.AddDropdown(style, styles, config.Highways, Highways);
+
+			UIHelperBase GroupPedestrianRoads = helper.AddGroup(globalText.GetString(displayLang, Globalization.StringKeys.PedestrianRoadsText));
+			GroupPedestrianRoads.AddDropdown(style, styles, config.PedestrianRoads, PedestrianRoads);
+			GroupPedestrianRoads.AddCheckbox(globalText.GetString(displayLang, Globalization.StringKeys.OptionPedRoadsText), config.HidePedRoadsSignal, IsPedRoadsSignal);
+			GroupPedestrianRoads.AddCheckbox(globalText.GetString(displayLang, Globalization.StringKeys.OptionPromenadeText), config.HidePromenadeSignal, IsPromenadeSignal);
+
+			/* 芝と街路樹のオプションがあれば必要性が薄いため、UIは非公開
+			UIHelperBase GroupBus = helper.AddGroup("[Beta]Road with Bus Lanes(except some roads)");
+			GroupBus.AddDropdown("Style", styles, config.Bus, Bus);
+			GroupBus.AddCheckbox("Enable", config.EnableBus, IsBusOption);*/
+
+			UIHelperBase GroupMonorail = helper.AddGroup(globalText.GetString(displayLang, Globalization.StringKeys.MonorailText));
+			GroupMonorail.AddDropdown(style, styles, config.Monorail, Monorail);
+			GroupMonorail.AddCheckbox(enable, config.EnableMonorail, IsMonorailOption);
+
+			UIHelperBase GroupGrass = helper.AddGroup(globalText.GetString(displayLang, Globalization.StringKeys.GrassText));
+			GroupGrass.AddDropdown(style, styles, config.Grass, Grass);
+			GroupGrass.AddCheckbox(enable, config.EnableGrass, IsGrassOption);
+
+			UIHelperBase GroupTrees = helper.AddGroup(globalText.GetString(displayLang, Globalization.StringKeys.TreesText));
+			GroupTrees.AddDropdown(style, styles, config.Trees, Trees);
+			GroupTrees.AddCheckbox(enable, config.EnableTrees, IsTreesOption);
 		}
-
-		/*private void IsRealStyle(bool c)
-		{
-			var config = Configuration<JapaneseTrafficLightsConfiguration>.Load();
-
-			config.realisticLayout = c;
-			Configuration<JapaneseTrafficLightsConfiguration>.Save();
-		}*/
 
 		private void IsPedRoadsSignal(bool b)
 		{
@@ -72,11 +97,35 @@ namespace JapaneseTrafficLights
 			Configuration<JapaneseTrafficLightsConfiguration>.Save();
 		}
 
-		private void IsMonorail(bool b)
+		private void IsBusOption(bool b)
 		{
 			var config = Configuration<JapaneseTrafficLightsConfiguration>.Load();
 
-			config.Monorail = b;
+			config.EnableBus = b;
+			Configuration<JapaneseTrafficLightsConfiguration>.Save();
+		}
+
+		private void IsMonorailOption(bool b)
+		{
+			var config = Configuration<JapaneseTrafficLightsConfiguration>.Load();
+
+			config.EnableMonorail = b;
+			Configuration<JapaneseTrafficLightsConfiguration>.Save();
+		}
+
+		private void IsGrassOption(bool b)
+		{
+			var config = Configuration<JapaneseTrafficLightsConfiguration>.Load();
+
+			config.EnableGrass = b;
+			Configuration<JapaneseTrafficLightsConfiguration>.Save();
+		}
+
+		private void IsTreesOption(bool b)
+		{
+			var config = Configuration<JapaneseTrafficLightsConfiguration>.Load();
+
+			config.EnableTrees = b;
 			Configuration<JapaneseTrafficLightsConfiguration>.Save();
 		}
 
@@ -151,15 +200,50 @@ namespace JapaneseTrafficLights
 			config.Highways = i;
 			Configuration<JapaneseTrafficLightsConfiguration>.Save();
 		}
+
+		/*private void Bus(int i)
+		{
+			var config = Configuration<JapaneseTrafficLightsConfiguration>.Load();
+
+			config.Bus = i;
+			Configuration<JapaneseTrafficLightsConfiguration>.Save();
+		}*/
+
+		private void Monorail(int i)
+		{
+			var config = Configuration<JapaneseTrafficLightsConfiguration>.Load();
+
+			config.Monorail = i;
+			Configuration<JapaneseTrafficLightsConfiguration>.Save();
+		}
+
+		private void Grass(int i)
+		{
+			var config = Configuration<JapaneseTrafficLightsConfiguration>.Load();
+
+			config.Grass = i;
+			Configuration<JapaneseTrafficLightsConfiguration>.Save();
+		}
+
+		private void Trees(int i)
+		{
+			var config = Configuration<JapaneseTrafficLightsConfiguration>.Load();
+
+			config.Trees = i;
+			Configuration<JapaneseTrafficLightsConfiguration>.Save();
+		}
 	}
 
 	[ConfigurationPath("JapaneseTrafficLights.xml")]
 	public class JapaneseTrafficLightsConfiguration
 	{
-		//public bool realisticLayout { get; set; }
 		public bool HidePedRoadsSignal { get; set; } = true;
 		public bool HidePromenadeSignal { get; set; } = false;
-		public bool Monorail { get; set; } = true;
+		public bool EnableBus { get; set; } = false;
+		public bool EnableMonorail { get; set; } = true;
+		public bool EnableGrass { get; set; } = true;
+		public bool EnableTrees { get; set; } = true;
+
 		public int Global { get; set; } = 0;
 		public int TinyRoads { get; set; } = 0;
 		public int PedestrianRoads { get; set; } = 0;
@@ -169,5 +253,9 @@ namespace JapaneseTrafficLights
 		public int LargeRoads { get; set; } = 0;
 		public int WideRoads { get; set; } = 0;
 		public int Highways { get; set; } = 0;
+		public int Bus { get; set; } = 0;
+		public int Monorail { get; set; } = 0;
+		public int Grass { get; set; } = 0;
+		public int Trees { get; set; } = 0;
 	}
 }

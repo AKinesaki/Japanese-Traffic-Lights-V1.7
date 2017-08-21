@@ -17,7 +17,7 @@ namespace JapaneseTrafficLights
 			}
 			
 			JPTL.ReplaceAllTL();
-			//JPTL.OutputRegisteredNetInfos();
+			//Log.OutputRegisteredNetInfos();
 		}
 	}
 }

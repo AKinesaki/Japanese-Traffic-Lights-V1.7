@@ -40,5 +40,20 @@ namespace JapaneseTrafficLights
 					break;
 			}
 		}
+
+		/// <summary>
+		/// 全てのNetInfoをテキストに出力する。
+		/// </summary>
+		public static void OutputRegisteredNetInfos()
+		{
+			System.IO.StreamWriter sw = new System.IO.StreamWriter("AllNetInfo.txt", false, System.Text.Encoding.GetEncoding("utf-8"));
+
+			foreach(var s in JPTL.GetRegisteredNetInfos())
+			{
+				sw.WriteLine(s);
+			}
+
+			sw.Close();
+		}
 	}
 }

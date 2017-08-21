@@ -9,17 +9,18 @@ namespace JapaneseTrafficLights
 {
 	public class JPTL
 	{
-		private static readonly PropInfo JPTLmain, JPTLsub, JPTLmainB, JPTLsubB;
-		private static readonly JapaneseTrafficLightsConfiguration config;
+		// 更新用メモ
+		// 1. メンバ変数を追加
+		// 2. コンストラクタにアセットを追加
+		// 3. ReturnStyleFromConfigに処理を追加
+		// 4. ReplaceTLに処理を追加
 
-		//スタイルを追加した時は、CheckRoadStyleと信号の置き換え部分も更新する
-		private enum style
-		{
-			def,
-			none,
-			white,
-			brown
-		}
+		/// <summary>
+		/// メンバ変数
+		/// </summary>
+		private static readonly JapaneseTrafficLightsConfiguration config;
+		private static readonly PropInfo JPTLmain, JPTLsub, JPTLmainBrown, JPTLsubBrown, JPTLmainBrown2, JPTLsubBrown2;
+		private enum style { none, white, brown, brown2 }
 
 		/// <summary>
 		/// コンストラクタ
@@ -30,12 +31,14 @@ namespace JapaneseTrafficLights
 			//右側通行(RHT) 810355214.
 			string workshopId = "";
 			//																L or R 確認
-			JPTLmain = PrefabCollection<PropInfo>.FindLoaded(workshopId + "JPTLmainNormalL_Data"); // 白　メイン
-			JPTLsub = PrefabCollection<PropInfo>.FindLoaded(workshopId + "JPTLsubNormalL_Data"); // 白　反対側
-			JPTLmainB = PrefabCollection<PropInfo>.FindLoaded(workshopId + "JPTLmainBrownL_Data"); // 茶　メイン
-			JPTLsubB = PrefabCollection<PropInfo>.FindLoaded(workshopId + "JPTLsubBrownL_Data"); // 茶　反対側、歩行者
+			JPTLmain = PrefabCollection<PropInfo>.FindLoaded(workshopId + "JPTLmainNormalL" + "_Data");
+			JPTLsub = PrefabCollection<PropInfo>.FindLoaded(workshopId + "JPTLsubNormalL" + "_Data");
+			JPTLmainBrown = PrefabCollection<PropInfo>.FindLoaded(workshopId + "JPTLmainBrownL" + "_Data");
+			JPTLsubBrown = PrefabCollection<PropInfo>.FindLoaded(workshopId + "JPTLsubBrownL" + "_Data");
+			JPTLmainBrown2 = PrefabCollection<PropInfo>.FindLoaded(workshopId + "JPTLmainBrown2L" + "_Data");
+			JPTLsubBrown2 = PrefabCollection<PropInfo>.FindLoaded(workshopId + "JPTLsubBrown2L" + "_Data");
 
-			if (JPTLmain == null || JPTLsub == null || JPTLmainB == null || JPTLsubB == null)
+			if (JPTLmain == null || JPTLsub == null || JPTLmainBrown == null || JPTLsubBrown == null || JPTLmainBrown2 == null || JPTLsubBrown2 == null)
 			{
 				Log.Display(Log.mode.error, "Prop Not Found", true);
 				return;
@@ -63,6 +66,22 @@ namespace JapaneseTrafficLights
 		}
 
 		/// <summary>
+		/// 全てのNetInfoを読み込み、配列で返す。
+		/// </summary>
+		public static NetInfo[] GetRegisteredNetInfos()
+		{
+			var allNetinfos = new List<NetInfo>();
+			for (uint i = 0; i < PrefabCollection<NetInfo>.PrefabCount(); i++)
+			{
+				NetInfo info = PrefabCollection<NetInfo>.GetPrefab(i);
+				if (info == null) continue;
+
+				allNetinfos.Add(info);
+			}
+			return allNetinfos.ToArray();
+		}
+
+		/// <summary>
 		/// NetInfoコレクションにある信号を置き換える。
 		/// </summary>
 		private static void ReplaceTL(IEnumerable<NetInfo> roads)
@@ -87,8 +106,8 @@ namespace JapaneseTrafficLights
 							continue;
 						}
 
-						// 道路の種別を判別してstyleを指定する
-						style style = ReturnStyleFromRoadname(road.name);						
+						// 道路を判別してstyleを指定する
+						style style = ReturnStyleFromRoadname(road.name);
 
 						// ここから置き換え
 						switch (prop.name)
@@ -111,8 +130,13 @@ namespace JapaneseTrafficLights
 										break;
 
 									case style.brown:
-										laneProp.m_finalProp = JPTLmainB;
-										laneProp.m_prop = JPTLmainB;
+										laneProp.m_finalProp = JPTLmainBrown;
+										laneProp.m_prop = JPTLmainBrown;
+										break;
+
+									case style.brown2:
+										laneProp.m_finalProp = JPTLmainBrown2;
+										laneProp.m_prop = JPTLmainBrown2;
 										break;
 								}
 								break;
@@ -122,12 +146,8 @@ namespace JapaneseTrafficLights
 							case "Traffic Light European 01 Mirror":
 							case "Traffic Light 02":
 							case "Traffic Light European 02":
-								if (
-										//road.name.Contains("FourDevidedLaneAvenue")
-										road.name.Contains("WideAvenue")
-								){
-									style = style.none;
-								}
+								//WideAvenueの時はTL1Mを消す。歩行者信号と重なってしまうため。
+								if (road.name.Contains("WideAvenue")) { style = style.none; }
 
 								switch (style)
 								{
@@ -142,8 +162,13 @@ namespace JapaneseTrafficLights
 										break;
 
 									case style.brown:
-										laneProp.m_finalProp = JPTLsubB;
-										laneProp.m_prop = JPTLsubB;
+										laneProp.m_finalProp = JPTLsubBrown;
+										laneProp.m_prop = JPTLsubBrown;
+										break;
+
+									case style.brown2:
+										laneProp.m_finalProp = JPTLsubBrown2;
+										laneProp.m_prop = JPTLsubBrown2;
 										break;
 								}
 								break;
@@ -153,13 +178,8 @@ namespace JapaneseTrafficLights
 								//（右側通行）この行を削除
 								laneProp.m_angle = laneProp.m_angle + 180;
 
-								// NE2の中央道路の場合は、歩行者信号を非表示にする
-								if (
-									road.name.Contains("FourDevidedLaneAvenue")
-									//road.name.Contains("WideAvenue")
-								){
-									style = style.none;
-								}
+								// FourDevidedLaneAvenueの時は消す。車道用信号か重なってしまうため。
+								if (road.name.Contains("FourDevidedLaneAvenue")){ style = style.none; }
 
 								switch (style)
 								{
@@ -174,8 +194,13 @@ namespace JapaneseTrafficLights
 										break;
 
 									case style.brown:
-										laneProp.m_finalProp = JPTLsubB;
-										laneProp.m_prop = JPTLsubB;
+										laneProp.m_finalProp = JPTLsubBrown;
+										laneProp.m_prop = JPTLsubBrown;
+										break;
+
+									case style.brown2:
+										laneProp.m_finalProp = JPTLsubBrown2;
+										laneProp.m_prop = JPTLsubBrown2;
 										break;
 								}
 								break;
@@ -183,40 +208,6 @@ namespace JapaneseTrafficLights
 					}
 				}
 			}
-		}
-
-		/// <summary>
-		/// 全てのNetInfoを読み込み、配列で返す。
-		/// </summary>
-		private static NetInfo[] GetRegisteredNetInfos()
-		{
-			var allNetinfos = new List<NetInfo>();
-			for (uint i = 0; i < PrefabCollection<NetInfo>.PrefabCount(); i++)
-			{
-				NetInfo info = PrefabCollection<NetInfo>.GetPrefab(i);
-				if (info == null) continue;
-
-				allNetinfos.Add(info);
-			}
-			return allNetinfos.ToArray();
-		}
-
-		/// <summary>
-		/// 全てのNetInfoを読み込み、テキストに出力する。
-		/// </summary>
-		public static void OutputRegisteredNetInfos()
-		{
-			System.IO.StreamWriter sw = new System.IO.StreamWriter("AllNetInfo.txt", false, System.Text.Encoding.GetEncoding("utf-8"));
-
-			for (uint i = 0; i < PrefabCollection<NetInfo>.PrefabCount(); i++)
-			{
-				NetInfo info = PrefabCollection<NetInfo>.GetPrefab(i);
-				if (info == null) continue;
-
-				sw.WriteLine(info.name.ToString());
-			}
-
-			sw.Close();
 		}
 
 		/// <summary>
@@ -231,6 +222,8 @@ namespace JapaneseTrafficLights
 					return style.white;
 				case 1:
 					return style.brown;
+				case 2:
+					return style.brown2;
 			}
 		}
 
@@ -239,8 +232,31 @@ namespace JapaneseTrafficLights
 		/// </summary>
 		private static style ReturnStyleFromRoadname(string name)
 		{
-			// 手違いでdefが残った場合にはデフォルトの信号が現れる
-			style style = style.def;
+			style style = ReturnStyleFromConfig(config.Global);
+
+			// Bus
+			if (name.ToLower().Contains("bus") && config.EnableBus) { return style = ReturnStyleFromConfig(config.Bus); }
+
+			// Monorail
+			if (name.Contains("Monorail") && config.EnableMonorail) { return style = ReturnStyleFromConfig(config.Monorail); }
+
+			// Grass
+			if (name.Contains("Grass") && config.EnableGrass)
+			{
+				if(!name.Contains("Medium Road"))
+				{
+					return style = ReturnStyleFromConfig(config.Grass);
+				}
+			}
+
+			// Trees
+			if (name.Contains("Trees") && config.EnableTrees)
+			{
+				if (!name.Contains("Medium Road"))
+				{
+					return style = ReturnStyleFromConfig(config.Trees);
+				}
+			}
 
 			// Tiny Roads
 			if (
@@ -250,7 +266,7 @@ namespace JapaneseTrafficLights
 				name.Contains("Two-Lane Oneway") ||
 				name.Contains("One-Lane Oneway With") ||
 				name == "One-Lane Oneway"
-			) { style = ReturnStyleFromConfig(config.TinyRoads); }
+			) { return style = ReturnStyleFromConfig(config.TinyRoads); }
 
 			// Small Roads
 			if (
@@ -263,9 +279,8 @@ namespace JapaneseTrafficLights
 				name.Contains("Small Busway") ||
 				name.Contains("Harbor Road") ||
 				name.Contains("Tram Depot Road") ||
-				// Small Road Monorail
 				name.Contains("Small Road")
-			) { style = ReturnStyleFromConfig(config.SmallRoads); }
+			) { return style = ReturnStyleFromConfig(config.SmallRoads); }
 
 			// Small Heavy Roads
 			if (
@@ -276,57 +291,48 @@ namespace JapaneseTrafficLights
 				name.Contains("AsymRoadL1R3") ||
 				name.Contains("Oneway4L") ||
 				name.Contains("OneWay3L")
-			) { style = ReturnStyleFromConfig(config.SmallHeavyRoads); }
+			) { return style = ReturnStyleFromConfig(config.SmallHeavyRoads); }
 
 			// Medium Roads
 			if (
 				name.Contains("Medium Road") ||
 				name.Contains("Avenue Large With") ||
 				name.Contains("Medium Avenue") ||
-				//FourDevidedLaneAvenue4Parking
-				//FourDevidedLaneAvenue2Bus
 				name.Contains("FourDevidedLaneAvenue") ||
 				name.Contains("AsymAvenueL2R4") ||
 				name.Contains("AsymAvenueL2R3")
-			) { style = ReturnStyleFromConfig(config.MediumRoads); }
+			) { return style = ReturnStyleFromConfig(config.MediumRoads); }
 
 			// Large Roads
 			if (
 				name.Contains("Large Road") ||
 				name.Contains("Large Oneway") ||
 				name.Contains("Eight-Lane Avenue")
-			) { style = ReturnStyleFromConfig(config.LargeRoads); }
+			) { return style = ReturnStyleFromConfig(config.LargeRoads); }
 
 			// Wide Roads
 			if (
-				//WideAvenue6LBusCenterBike
 				name.Contains("WideAvenue")
-			) { style = ReturnStyleFromConfig(config.WideRoads); }
+			) { return style = ReturnStyleFromConfig(config.WideRoads); }
 
 			// Highway
 			if (
 				name.Contains("Highway")
-			) { style = ReturnStyleFromConfig(config.Highways); }
+			) { return style = ReturnStyleFromConfig(config.Highways); }
 
 			// Pedestrian Roads
 			if (name.Contains("Zonable Pedestrian"))
 			{
-				if (config.HidePedRoadsSignal) { style = style.none; }
-				else { style = ReturnStyleFromConfig(config.PedestrianRoads); }
+				if (config.HidePedRoadsSignal) { return style = style.none; }
+				else { return style = ReturnStyleFromConfig(config.PedestrianRoads); }
 			}
 
 			// Promenade
 			if (name.Contains("Zonable Promenade"))
 			{
-				if (config.HidePromenadeSignal) { style = style.none; }
-				else { style = ReturnStyleFromConfig(config.PedestrianRoads); }
+				if (config.HidePromenadeSignal) { return style = style.none; }
+				else { return style = ReturnStyleFromConfig(config.PedestrianRoads); }
 			}
-
-			// Monorail
-			if (name.Contains("Monorail")) { if (config.Monorail) { style = ReturnStyleFromConfig(config.Global); } }
-
-			// Global
-			if (style == style.def) { style = ReturnStyleFromConfig(config.Global); }
 
 			return style;
 		}
